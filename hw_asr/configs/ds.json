@@ -32,7 +32,7 @@
           "type": "LJspeechDataset",
           "args": {
             "part": "train",
-            "max_audio_length": 20.0,
+            "max_audio_length": 5.0,
             "max_text_length": 200
           }
         }
@@ -60,7 +60,7 @@
           "type": "LibrispeechDataset",
           "args": {
             "part": "test-clean",
-            "max_audio_length": 5.0,
+            "max_audio_length": 20.0,
             "max_text_length": 200
           }
         }
@@ -111,7 +111,7 @@
     "epochs": 100,
     "save_dir": "saved/",
     "save_period": 5,
-    "verbosity": 1,
+    "verbosity": 2,
     "monitor": "min val_loss",
     "early_stop": 100,
     "visualize": "wandb",

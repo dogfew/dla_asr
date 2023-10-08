@@ -36,6 +36,7 @@ class Trainer(BaseTrainer):
             dataloaders,
             text_encoder,
             log_step=200,  # how often WANDB will log
+            log_predictions_step_epoch=5,
             do_beam_search=False,
             lr_scheduler=None,
             len_epoch=None,
@@ -56,6 +57,7 @@ class Trainer(BaseTrainer):
         self.evaluation_dataloaders = {k: v for k, v in dataloaders.items() if k != "train"}
         self.lr_scheduler = lr_scheduler
         self.log_step = log_step
+        self.log_predictions_step_epoch = log_predictions_step_epoch
         self.do_beam_search = do_beam_search
         self.train_metrics = MetricTracker(
             "loss", "grad norm",
@@ -63,7 +65,9 @@ class Trainer(BaseTrainer):
             writer=self.writer
         )
         self.evaluation_metrics = MetricTracker(
-            "loss", *[m.name for m in self.metrics], writer=self.writer
+            "loss",
+            *[m.name for m in self.metrics],
+            writer=self.writer
         )
 
         self.scaler = GradScaler()
@@ -113,6 +117,7 @@ class Trainer(BaseTrainer):
                 else:
                     raise e
             self.train_metrics.update("grad norm", self.get_grad_norm())
+
             if batch_idx % self.log_step == 0:
                 self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.logger.debug(
@@ -130,6 +135,8 @@ class Trainer(BaseTrainer):
                 # because we are interested in recent train metrics
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
+            if epoch % self.log_predictions_step_epoch == 0:
+                self._log_predictions(**batch)
             if batch_idx >= self.len_epoch:
                 break
         log = last_train_metrics

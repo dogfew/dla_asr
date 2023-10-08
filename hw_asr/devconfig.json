@@ -118,7 +118,8 @@
     "wandb_project": "asr_project",
     "len_epoch": 100,
     "grad_norm_clip": 10,
-    "log_step": 50,
-    "do_beam_search": false
+    "log_step": 100,
+    "log_predictions_step_epoch": 5,
+    "do_beam_search": true
   }
 }
