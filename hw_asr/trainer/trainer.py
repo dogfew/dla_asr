@@ -234,14 +234,16 @@ class Trainer(BaseTrainer):
                     probs=log_probs_cpu[i],
                     probs_length=log_probs_length_numpy[i]
                 )[0].text
-                for i in range(len(log_probs_length))
+                for i in range(examples_to_log)
             ]
         else:
-            beam_search_texts = ['' for _ in range(len(log_probs_length))]
-        tuples = list(zip(argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path))
+            beam_search_texts = ['' for _ in range(examples_to_log)]
+        tuples = [argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path]
+        tuples = [i[:examples_to_log] for i in tuples]
+        tuples = list(zip(*tuples))
         shuffle(tuples)
         rows = {}
-        for pred, target, beam_search_pred, raw_pred, audio_path in tuples[:examples_to_log]:
+        for pred, target, beam_search_pred, raw_pred, audio_path in tuples:
             target = BaseTextEncoder.normalize_text(target)
             wer = calc_wer(target, pred) * 100
             cer = calc_cer(target, pred) * 100
