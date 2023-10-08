@@ -1,5 +1,5 @@
 {
-  "name": "DeepSpeech2 + LJSpeech",
+  "name": "DeepSpeech2LJSpeech",
   "n_gpu": 1,
   "preprocessing": {
     "sr": 16000,
@@ -52,7 +52,7 @@
         }
       ]
     },
-    "test-clean": {
+    "test": {
       "batch_size": 32,
       "num_workers": 4,
       "datasets": [
@@ -108,7 +108,7 @@
     }
   },
   "trainer": {
-    "epochs": 100,
+    "epochs": 55,
     "save_dir": "saved/",
     "save_period": 5,
     "verbosity": 2,

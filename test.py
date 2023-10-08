@@ -11,6 +11,7 @@ from hw_asr.trainer import Trainer
 from hw_asr.utils import ROOT_PATH
 from hw_asr.utils.object_loading import get_dataloaders
 from hw_asr.utils.parse_config import ConfigParser
+from hw_asr.metric.utils import calc_wer, calc_cer
 
 DEFAULT_CHECKPOINT_PATH = ROOT_PATH / "default_test_model" / "checkpoint.pth"
 
@@ -44,6 +45,13 @@ def main(config, out_file):
 
     results = []
 
+
+    metrics_to_print = {
+        'WER': [],
+        'CER': [],
+        'WER (argmax)': [],
+        'CER (argmax)': []
+    }
     with torch.no_grad():
         for batch_num, batch in enumerate(tqdm(dataloaders["test"])):
             batch = Trainer.move_batch_to_device(batch, device)
@@ -55,21 +63,33 @@ def main(config, out_file):
             batch["log_probs"] = torch.log_softmax(batch["logits"], dim=-1)
             batch["log_probs_length"] = model.transform_input_lengths(
                 batch["spectrogram_length"]
-            )
-            batch["probs"] = batch["log_probs"].exp().cpu()
+            ).cpu().numpy()
+            batch["probs"] = batch["log_probs"].exp().cpu().numpy()
             batch["argmax"] = batch["probs"].argmax(-1)
             for i in range(len(batch["text"])):
                 argmax = batch["argmax"][i]
                 argmax = argmax[: int(batch["log_probs_length"][i])]
+
+                true_text = batch["text"][i].strip().lower()
+                argmax_result = text_encoder.ctc_decode(argmax)
+                beam_search_result = text_encoder.ctc_beam_search(
+                            batch["probs"][i],
+                            batch["log_probs_length"][i], beam_size=10
+                        )
                 results.append(
                     {
-                        "ground_trurh": batch["text"][i],
-                        "pred_text_argmax": text_encoder.ctc_decode(argmax.cpu().numpy()),
-                        "pred_text_beam_search": text_encoder.ctc_beam_search(
-                            batch["probs"][i], batch["log_probs_length"][i], beam_size=100
-                        )[:10],
+                        "ground_truth": batch["text"][i],
+                        "pred_text_argmax": argmax_result,
+                        "pred_text_beam_search": beam_search_result,
                     }
                 )
+                metrics_to_print['WER'].append(calc_wer(true_text, beam_search_result[0].text))
+                metrics_to_print['CER'].append(calc_cer(true_text, beam_search_result[0].text))
+
+                metrics_to_print['WER (argmax)'].append(calc_wer(true_text, argmax_result))
+                metrics_to_print['CER (argmax)'].append(calc_cer(true_text, argmax_result))
+    for k, v in metrics_to_print.items():
+        print(k, sum(v) / len(v))
     with Path(out_file).open("w") as f:
         json.dump(results, f, indent=2)
 

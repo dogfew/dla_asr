@@ -57,6 +57,7 @@ class CTCCharTextEncoder(CharTextEncoder):
         char_length, voc_size = probs.shape
         assert voc_size == len(self.ind2char)
         hypos: list[Hypothesis] = []
+        return self.lm_ctc_beam_search(probs, probs_length, beam_size)
         # TODO: your code here
         raise NotImplementedError
         return sorted(hypos, key=lambda x: x.prob, reverse=True)

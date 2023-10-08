@@ -226,7 +226,6 @@ class Trainer(BaseTrainer):
             *args,
             **kwargs,
     ):
-        print("LOGGING PREDICTIONS!!!")
         if self.writer is None:
             return
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
