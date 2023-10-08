@@ -35,6 +35,8 @@ class Trainer(BaseTrainer):
             device,
             dataloaders,
             text_encoder,
+            log_step=200,  # how often WANDB will log
+            do_beam_search=False,
             lr_scheduler=None,
             len_epoch=None,
             skip_oom=True,
@@ -53,8 +55,8 @@ class Trainer(BaseTrainer):
             self.len_epoch = len_epoch
         self.evaluation_dataloaders = {k: v for k, v in dataloaders.items() if k != "train"}
         self.lr_scheduler = lr_scheduler
-        self.log_step = 50
-
+        self.log_step = log_step
+        self.do_beam_search = do_beam_search
         self.train_metrics = MetricTracker(
             "loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
         )
@@ -214,7 +216,6 @@ class Trainer(BaseTrainer):
             *args,
             **kwargs,
     ):
-        # TODO: implement logging of beam search results
         if self.writer is None:
             return
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
@@ -224,10 +225,23 @@ class Trainer(BaseTrainer):
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
+
+        if self.do_beam_search:
+            log_probs_cpu = log_probs.cpu().detach().numpy()
+            log_probs_length_numpy = log_probs_length.numpy()
+            beam_search_texts = [
+                self.text_encoder.lm_ctc_beam_search(
+                    probs=log_probs_cpu[i],
+                    probs_length=log_probs_length_numpy[i]
+                )[0].text
+                for i in range(len(log_probs_length))
+            ]
+        else:
+            beam_search_texts = ['' for _ in range(len(log_probs_length))]
+        tuples = list(zip(argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path))
         shuffle(tuples)
         rows = {}
-        for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
+        for pred, target, beam_search_pred, raw_pred, audio_path in tuples[:examples_to_log]:
             target = BaseTextEncoder.normalize_text(target)
             wer = calc_wer(target, pred) * 100
             cer = calc_cer(target, pred) * 100
@@ -239,6 +253,16 @@ class Trainer(BaseTrainer):
                 "wer": wer,
                 "cer": cer,
             }
+            if self.do_beam_search:
+                wer_beam_search = calc_wer(target, beam_search_pred) * 100
+                cer_beam_search = calc_cer(target, beam_search_pred) * 100
+
+                rows[Path(audio_path).name].update(
+                    {'wer_beam_search': wer_beam_search,
+                     'cer_beam_search': cer_beam_search,
+                     'predictions_beam_search': beam_search_pred
+                     }
+                )
         self.writer.add_table("predictions", pd.DataFrame.from_dict(rows, orient="index"))
 
     def _log_spectrogram(self, spectrogram_batch):

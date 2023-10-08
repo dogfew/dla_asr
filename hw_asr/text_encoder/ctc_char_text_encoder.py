@@ -1,8 +1,14 @@
+import multiprocessing
+from multiprocessing import cpu_count
 from typing import List, NamedTuple
 
 import torch
 import re
+
+from torchaudio.models.decoder._ctc_decoder import download_pretrained_files
+
 from .char_text_encoder import CharTextEncoder
+from pyctcdecode import build_ctcdecoder
 
 
 class Hypothesis(NamedTuple):
@@ -13,9 +19,17 @@ class Hypothesis(NamedTuple):
 class CTCCharTextEncoder(CharTextEncoder):
     EMPTY_TOK = "^"
 
-    def __init__(self, alphabet: list[str] = None):
+    def __init__(self, alphabet: list[str] = None, vocab_path=None):
         super().__init__(alphabet)
-        vocab = [self.EMPTY_TOK] + list(self.alphabet)
+        if vocab_path is not None:
+            lm_files = download_pretrained_files('librispeech-3-gram')
+            unigrams = [i.split('\t')[0].lower().strip() for i in open(lm_files.lexicon).read().splitlines()]
+            self.decoder = build_ctcdecoder(
+                labels=[''] + list(self.alphabet),
+                kenlm_model_path=lm_files.lm,
+                unigrams=unigrams
+            )
+        vocab = [''] + list(self.alphabet)
         self.ind2char = dict(enumerate(vocab))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
 
@@ -26,10 +40,14 @@ class CTCCharTextEncoder(CharTextEncoder):
                                   text)
         return text_with_tokens.replace(self.EMPTY_TOK, "")
 
+    def lm_ctc_beam_search(self, probs, probs_length, beam_size=10):
+        text = self.decoder.decode(probs[:probs_length], beam_width=beam_size)
+        return [Hypothesis(text, 1.0)]
+
     def ctc_beam_search(self,
                         probs: torch.tensor,
                         probs_length,
-                        beam_size: int = 100) -> list[Hypothesis]:
+                        beam_size: int = 50) -> list[Hypothesis]:
         """
         Performs beam search and returns a list of pairs (hypothesis, hypothesis probability).
         """

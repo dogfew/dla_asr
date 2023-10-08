@@ -28,7 +28,6 @@ def main(config):
 
     # text_encoder
     text_encoder = config.get_text_encoder()
-
     # setup data_loader instances
     dataloaders = get_dataloaders(config, text_encoder)
 
@@ -66,14 +65,15 @@ def main(config):
         device=device,
         dataloaders=dataloaders,
         lr_scheduler=lr_scheduler,
-        len_epoch=config["trainer"].get("len_epoch", None)
+        len_epoch=config["trainer"].get("len_epoch", None),
+        log_step=config['trainer'].get("log_step", 200),
+        do_beam_search=config['trainer'].get('do_beam_search', False)
     )
 
     trainer.train()
 
 
 if __name__ == "__main__":
-    # torch.autograd.set_detect_anomaly(True)   # to remove
     args = argparse.ArgumentParser(description="PyTorch Template")
     args.add_argument(
         "-c",
