@@ -60,7 +60,7 @@
           "type": "LibrispeechDataset",
           "args": {
             "part": "test-clean",
-            "max_audio_length": 5.0,
+            "max_audio_length": 20.0,
             "max_text_length": 200
           }
         }

@@ -31,8 +31,8 @@ class CTCCharTextEncoder(CharTextEncoder):
                 alpha=0.6,
                 beta=0.15,
             )
-        vocab = [''] + list(self.alphabet)
-        self.ind2char = dict(enumerate(vocab))
+            # vocab = [''] + list(self.alphabet)
+        self.ind2char = dict(enumerate(['^'] + list(self.alphabet)))
         self.char2ind = {v: k for k, v in self.ind2char.items()}
 
     def ctc_decode(self, inds: list[int]) -> str:

@@ -128,15 +128,15 @@ class Trainer(BaseTrainer):
                 self.writer.add_scalar(
                     "learning rate", self.lr_scheduler.get_last_lr()[0]
                 )
-                self._log_predictions(**batch)
+                # self._log_predictions(**batch)
                 self._log_spectrogram(batch["spectrogram"])
                 self._log_scalars(self.train_metrics)
                 # we don't want to reset train metrics at the start of every epoch
                 # because we are interested in recent train metrics
                 last_train_metrics = self.train_metrics.result()
                 self.train_metrics.reset()
-            if epoch % self.log_predictions_step_epoch == 0:
-                self._log_predictions(**batch)
+                if epoch % self.log_predictions_step_epoch == 0:
+                    self._log_predictions(**batch)
             if batch_idx >= self.len_epoch:
                 break
         log = last_train_metrics
@@ -197,7 +197,8 @@ class Trainer(BaseTrainer):
                 )
             self.writer.set_step(epoch * self.len_epoch, part)
             self._log_scalars(self.evaluation_metrics)
-            self._log_predictions(**batch)
+            if epoch % self.log_predictions_step_epoch == 0:
+                self._log_predictions(**batch)
             self._log_spectrogram(batch["spectrogram"])
 
         # add histogram of model parameters to the tensorboard
@@ -225,6 +226,7 @@ class Trainer(BaseTrainer):
             *args,
             **kwargs,
     ):
+        print("LOGGING PREDICTIONS!!!")
         if self.writer is None:
             return
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
@@ -234,7 +236,6 @@ class Trainer(BaseTrainer):
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-
         if self.do_beam_search:
             log_probs_cpu = log_probs.cpu().detach().numpy()
             log_probs_length_numpy = log_probs_length.numpy()
