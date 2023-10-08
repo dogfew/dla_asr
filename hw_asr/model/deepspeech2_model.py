@@ -72,7 +72,7 @@ class RNNBlock(nn.Module):
             #   B x T x (C * F)
             #   (T * B) x (C * F)
             B, T, F = x.shape
-            x = self.batch_norm(x.reshape(T * B, F, 1)).reshape(B, T, F)
+            x = self.batch_norm(x.view(T * B, F, -1)).view(B, T, F)
             # -> B x T x (C * F)
 
         x = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
@@ -113,12 +113,12 @@ class DeepSpeech2(BaseModel):
 
         self.conv_layers = nn.ModuleList(raw_conv_layers[:n_conv_layers])
         self.rnn_layers = nn.ModuleList(raw_rnn_layers[:n_rnn_layers])
-        self.linear = nn.Sequential(
-            nn.Linear(
+        self.batch_norm = nn.BatchNorm1d(fc_hidden)
+        self.linear = nn.Linear(
                 in_features=fc_hidden,
-                out_features=n_class
+                out_features=n_class,
+                bias=False
             )
-        )
 
     def forward(self, spectrogram, **batch):
         """
@@ -134,10 +134,13 @@ class DeepSpeech2(BaseModel):
         # new_spec: B x (C * NF) x T1
         #    ->     B x T1 x (C * NF)
         #    ->     B x T1 x F2
-        out = out.view(out.shape[0], out.shape[1] * out.shape[2], -1).transpose(1, 2)
+        B, T, F, _ = out.shape
+        out = out.view(B, T * F, -1).transpose(1, 2).contiguous()
         h = None
         for layer in self.rnn_layers:
             out, lengths, h = layer(out, lengths, h)
+        B, T, F = out.shape
+        out = self.batch_norm(out.view(T * B, F, 1)).view(B, T, F)
         out = self.linear(out)
         return {"logits": out}
 
@@ -165,8 +168,6 @@ if __name__ == '__main__':
     spectrogram, lengths = custom_data()
     conv_block = ConvBlock()
     print(spectrogram.unsqueeze(dim=1).shape)
-    # conv_res = conv_block(spectrogram.unsqueeze(dim=1), lengths)
-    # print(conv_res[0].squeeze(dim=(1, 2)).shape)
     out = model(spectrogram, **{'spectrogram_length': lengths})['logits'][0]
     print(out.norm())
 

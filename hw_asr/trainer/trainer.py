@@ -58,7 +58,9 @@ class Trainer(BaseTrainer):
         self.log_step = log_step
         self.do_beam_search = do_beam_search
         self.train_metrics = MetricTracker(
-            "loss", "grad norm", *[m.name for m in self.metrics], writer=self.writer
+            "loss", "grad norm",
+            *[m.name for m in self.metrics],
+            writer=self.writer
         )
         self.evaluation_metrics = MetricTracker(
             "loss", *[m.name for m in self.metrics], writer=self.writer

@@ -27,7 +27,9 @@ class CTCCharTextEncoder(CharTextEncoder):
             self.decoder = build_ctcdecoder(
                 labels=[''] + list(self.alphabet),
                 kenlm_model_path=lm_files.lm,
-                unigrams=unigrams
+                unigrams=unigrams,
+                alpha=0.6,
+                beta=0.15,
             )
         vocab = [''] + list(self.alphabet)
         self.ind2char = dict(enumerate(vocab))
