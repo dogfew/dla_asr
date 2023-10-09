@@ -16,8 +16,9 @@ from hw_asr.logger.utils import plot_spectrogram_to_buf
 from hw_asr.metric.utils import calc_cer, calc_wer
 from hw_asr.utils import inf_loop, MetricTracker
 from torch.cuda.amp import autocast, GradScaler
+from hw_asr.utils import optional_autocast
 
-mixed_precision = True
+mixed_precision = False
 
 
 class Trainer(BaseTrainer):
@@ -70,7 +71,7 @@ class Trainer(BaseTrainer):
             writer=self.writer
         )
 
-        self.scaler = GradScaler()
+        self.scaler = GradScaler(enabled=mixed_precision)
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -151,7 +152,7 @@ class Trainer(BaseTrainer):
         batch = self.move_batch_to_device(batch, self.device)
         if is_train:
             self.optimizer.zero_grad()
-        with autocast():
+        with optional_autocast(mixed_precision):
             outputs = self.model(**batch)
             if type(outputs) is dict:
                 batch.update(outputs)

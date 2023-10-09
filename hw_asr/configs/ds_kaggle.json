@@ -19,27 +19,37 @@
     "args": {
       "n_feats": 128,
       "fc_hidden": 512,
-      "n_conv_layers": 1,
-      "n_rnn_layers": 3
+      "n_conv_layers": 2,
+      "n_rnn_layers": 5
     }
   },
   "data": {
-    "train": {
-      "batch_size": 64,
-      "num_workers": 4,
-      "datasets": [
-        {
-          "type": "LJspeechDataset",
-          "args": {
-            "part": "train",
-            "max_audio_length": 5.0,
-            "max_text_length": 200
-          }
-        }
+        "train": {
+          "batch_size": 50,
+          "num_workers": 5,
+          "datasets": [
+            {
+              "type": "CustomDirAudioDataset",
+              "args": {
+                "audio_dir": "/kaggle/input/librispeech-asr-wav-dataset/train-clean-100",
+                  "transcription_dir":"/kaggle/input/librispeech-asr-wav-dataset/meta/train-clean-100",
+                "max_audio_length": 20.0,
+                "max_text_length": 200
+              }
+        },
+            {
+                "type": "CustomDirAudioDataset",
+              "args": {
+                "audio_dir": "/kaggle/input/librispeech-asr-wav-dataset/train-clean-360",
+                  "transcription_dir":"/kaggle/input/librispeech-asr-wav-dataset/meta/train-clean-360",
+                "max_audio_length": 20.0,
+                "max_text_length": 200
+              }
+            }
       ]
     },
     "val": {
-      "batch_size": 64,
+      "batch_size": 50,
       "num_workers": 5,
       "datasets": [
         {
@@ -52,9 +62,9 @@
         }
       ]
     },
-    "test": {
-      "batch_size": 32,
-      "num_workers": 4,
+    "test-clean": {
+      "batch_size": 50,
+      "num_workers": 5,
       "datasets": [
         {
           "type": "LibrispeechDataset",
@@ -70,8 +80,7 @@
   "optimizer": {
     "type": "Adam",
     "args": {
-      "lr": 0.005,
-      "weight_decay": 1e-7
+      "lr": 0.0002
     }
   },
   "loss": {
@@ -95,10 +104,10 @@
   "lr_scheduler": {
     "type": "OneCycleLR",
     "args": {
-      "steps_per_epoch": 100,
-      "epochs": 51,
+      "steps_per_epoch": 200,
+      "epochs": 101,
       "anneal_strategy": "cos",
-      "max_lr": 1e-3,
+      "max_lr": 0.0005,
       "pct_start": 0.2
     }
   },
@@ -109,7 +118,7 @@
     }
   },
   "trainer": {
-    "epochs": 50,
+    "epochs": 100,
     "save_dir": "saved/",
     "save_period": 5,
     "verbosity": 2,

@@ -58,7 +58,9 @@ class RNNBlock(nn.Module):
         self.rnn = nn.GRU(input_size,
                           hidden_size,
                           bidirectional=bidirectional,
-                          batch_first=True)
+                          batch_first=True,
+                          dropout=0.1
+                          )
         self.use_batch_norm = batch_norm
 
     def forward(self, x, lengths, h=None):
@@ -115,10 +117,10 @@ class DeepSpeech2(BaseModel):
         self.rnn_layers = nn.ModuleList(raw_rnn_layers[:n_rnn_layers])
         self.batch_norm = nn.BatchNorm1d(fc_hidden)
         self.linear = nn.Linear(
-                in_features=fc_hidden,
-                out_features=n_class,
-                bias=False
-            )
+            in_features=fc_hidden,
+            out_features=n_class,
+            bias=False
+        )
 
     def forward(self, spectrogram, **batch):
         """
