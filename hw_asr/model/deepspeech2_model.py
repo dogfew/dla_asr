@@ -83,7 +83,7 @@ class RNNBlock(nn.Module):
         # -> B x T x (C * F)
         return x, lengths, h
 
-#
+
 class DeepSpeech2(BaseModel):
     def __init__(self,
                  n_feats: int,
