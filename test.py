@@ -53,43 +53,47 @@ def main(config, out_file):
         'CER (argmax)': []
     }
     with torch.no_grad():
-        for batch_num, batch in enumerate(tqdm(dataloaders["test"])):
-            batch = Trainer.move_batch_to_device(batch, device)
-            output = model(**batch)
-            if type(output) is dict:
-                batch.update(output)
-            else:
-                batch["logits"] = output
-            batch["log_probs"] = torch.log_softmax(batch["logits"], dim=-1)
-            batch["log_probs_length"] = model.transform_input_lengths(
-                batch["spectrogram_length"]
-            ).cpu().numpy()
-            batch["probs"] = batch["log_probs"].exp().cpu().numpy()
-            batch["argmax"] = batch["probs"].argmax(-1)
-            for i in range(len(batch["text"])):
-                argmax = batch["argmax"][i]
-                argmax = argmax[: int(batch["log_probs_length"][i])]
+        for test_type in ['test', 'test-clean', 'test-other']:
+            if test_type not in dataloaders.keys():
+                continue
+            for batch_num, batch in enumerate(tqdm(dataloaders[test_type])):
+                batch = Trainer.move_batch_to_device(batch, device)
+                output = model(**batch)
+                if type(output) is dict:
+                    batch.update(output)
+                else:
+                    batch["logits"] = output
+                batch["log_probs"] = torch.log_softmax(batch["logits"], dim=-1)
+                batch["log_probs_length"] = model.transform_input_lengths(
+                    batch["spectrogram_length"]
+                ).cpu().numpy()
+                batch["probs"] = batch["log_probs"].exp().cpu().numpy()
+                batch["argmax"] = batch["probs"].argmax(-1)
+                for i in range(len(batch["text"])):
+                    argmax = batch["argmax"][i]
+                    argmax = argmax[: int(batch["log_probs_length"][i])]
 
-                true_text = batch["text"][i].strip().lower()
-                argmax_result = text_encoder.ctc_decode(argmax)
-                beam_search_result = text_encoder.ctc_beam_search(
-                            batch["probs"][i],
-                            batch["log_probs_length"][i], beam_size=10
-                        )
-                results.append(
-                    {
-                        "ground_truth": batch["text"][i],
-                        "pred_text_argmax": argmax_result,
-                        "pred_text_beam_search": beam_search_result,
-                    }
-                )
-                metrics_to_print['WER'].append(calc_wer(true_text, beam_search_result[0].text))
-                metrics_to_print['CER'].append(calc_cer(true_text, beam_search_result[0].text))
+                    true_text = batch["text"][i].strip().lower()
+                    argmax_result = text_encoder.ctc_decode(argmax)
+                    beam_search_result = text_encoder.ctc_beam_search(
+                                batch["probs"][i],
+                                batch["log_probs_length"][i], beam_size=150
+                            )
+                    results.append(
+                        {
+                            "ground_truth": batch["text"][i],
+                            "pred_text_argmax": argmax_result,
+                            "pred_text_beam_search": beam_search_result,
+                        }
+                    )
+                    metrics_to_print['WER'].append(calc_wer(true_text, beam_search_result[0].text))
+                    metrics_to_print['CER'].append(calc_cer(true_text, beam_search_result[0].text))
 
-                metrics_to_print['WER (argmax)'].append(calc_wer(true_text, argmax_result))
-                metrics_to_print['CER (argmax)'].append(calc_cer(true_text, argmax_result))
-    for k, v in metrics_to_print.items():
-        print(k, sum(v) / len(v))
+                    metrics_to_print['WER (argmax)'].append(calc_wer(true_text, argmax_result))
+                    metrics_to_print['CER (argmax)'].append(calc_cer(true_text, argmax_result))
+            print(f"TEST: {test_type}")
+            for k, v in metrics_to_print.items():
+                print(k, sum(v) / len(v))
     with Path(out_file).open("w") as f:
         json.dump(results, f, indent=2)
 

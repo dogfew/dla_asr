@@ -88,15 +88,16 @@
     }
   },
   "trainer": {
-    "epochs": 50,
+    "epochs": 5,
     "save_dir": "saved/",
     "save_period": 5,
     "verbosity": 2,
     "monitor": "min val_loss",
     "early_stop": 100,
     "visualize": "wandb",
-    "wandb_project": "asr_project",
+    "wandb_project": "none",
     "len_epoch": 100,
-    "grad_norm_clip": 10
+    "grad_norm_clip": 10,
+    "do_beam_search": true
   }
 }

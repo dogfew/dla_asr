@@ -11,28 +11,56 @@
     "log_spec": true
   },
   "augmentations": {
-    "wave": [],
-    "spectrogram": []
+    "wave": [
+      {
+        "type": "Gain",
+        "args": {
+          "p": 0.2
+        }
+      },
+      {
+        "type": "ColoredNoise",
+        "args": {
+          "p": 0.2,
+          "sample_rate": 32
+        }
+      }
+    ],
+      "spectrogram": [
+        {
+          "type": "FrequencyMasking",
+          "args": {
+            "freq_mask_param": 80
+          }
+        },
+        {
+        "type": "TimeMasking",
+          "args": {
+            "time_mask_param": 80,
+            "p": 0.2
+          }
+        }
+      ]
   },
   "arch": {
     "type": "DeepSpeech2",
     "args": {
       "n_feats": 128,
       "fc_hidden": 512,
-      "n_conv_layers": 1,
-      "n_rnn_layers": 3
+      "n_conv_layers": 3,
+      "n_rnn_layers": 5
     }
   },
   "data": {
     "train": {
       "batch_size": 64,
-      "num_workers": 4,
+      "num_workers": 7,
       "datasets": [
         {
           "type": "LJspeechDataset",
           "args": {
             "part": "train",
-            "max_audio_length": 5.0,
+            "max_audio_length": 20.0,
             "max_text_length": 200
           }
         }
@@ -53,25 +81,26 @@
       ]
     },
     "test": {
-      "batch_size": 32,
-      "num_workers": 4,
+      "batch_size": 64,
+      "num_workers": 5,
       "datasets": [
         {
-          "type": "LibrispeechDataset",
+          "type": "LJspeechDataset",
           "args": {
-            "part": "test-clean",
+            "part": "test",
             "max_audio_length": 20.0,
             "max_text_length": 200
           }
-        }
+        },
+
       ]
     }
   },
   "optimizer": {
     "type": "Adam",
     "args": {
-      "lr": 0.005,
-      "weight_decay": 1e-6
+      "lr": 0.0025,
+      "weight_decay": 0
     }
   },
   "loss": {
@@ -96,9 +125,9 @@
     "type": "OneCycleLR",
     "args": {
       "steps_per_epoch": 100,
-      "epochs": 51,
+      "epochs": 151,
       "anneal_strategy": "cos",
-      "max_lr": 1e-3,
+      "max_lr": 3e-4,
       "pct_start": 0.2
     }
   },
@@ -109,15 +138,15 @@
     }
   },
   "trainer": {
-    "epochs": 50,
+    "epochs": 150,
     "save_dir": "saved/",
-    "save_period": 5,
+    "save_period": 10,
     "verbosity": 2,
     "monitor": "min val_loss",
     "early_stop": 100,
     "visualize": "wandb",
     "wandb_project": "asr_project",
-    "len_epoch": 100,
+    "len_epoch": 200,
     "grad_norm_clip": 10,
     "log_step": 100,
     "log_predictions_step_epoch": 10,

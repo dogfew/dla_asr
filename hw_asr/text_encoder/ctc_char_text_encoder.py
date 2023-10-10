@@ -8,6 +8,7 @@ import re
 from torchaudio.models.decoder._ctc_decoder import download_pretrained_files
 
 from .char_text_encoder import CharTextEncoder
+from hw_asr.utils.download_lm import get_language_model
 from pyctcdecode import build_ctcdecoder
 
 
@@ -19,14 +20,17 @@ class Hypothesis(NamedTuple):
 class CTCCharTextEncoder(CharTextEncoder):
     EMPTY_TOK = "^"
 
-    def __init__(self, alphabet: list[str] = None, vocab_path=None):
+    def __init__(self, alphabet: list[str] = None, vocab_path=1):
         super().__init__(alphabet)
         if vocab_path is not None:
+            # model_path, unigrams = get_language_model()
+            #unigrams = open(unigrams).read().splitlines()
             lm_files = download_pretrained_files('librispeech-3-gram')
             unigrams = [i.split('\t')[0].lower().strip() for i in open(lm_files.lexicon).read().splitlines()]
+            model_path =lm_files.lm
             self.decoder = build_ctcdecoder(
                 labels=[''] + list(self.alphabet),
-                kenlm_model_path=lm_files.lm,
+                kenlm_model_path=model_path,
                 unigrams=unigrams,
                 alpha=0.6,
                 beta=0.15,

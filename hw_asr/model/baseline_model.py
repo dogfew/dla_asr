@@ -21,3 +21,4 @@ class BaselineModel(BaseModel):
 
     def transform_input_lengths(self, input_lengths):
         return input_lengths  # we don't reduce time dimension here
+

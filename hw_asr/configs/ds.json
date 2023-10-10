@@ -19,20 +19,20 @@
     "args": {
       "n_feats": 128,
       "fc_hidden": 512,
-      "n_conv_layers": 1,
+      "n_conv_layers": 2,
       "n_rnn_layers": 3
     }
   },
   "data": {
     "train": {
       "batch_size": 64,
-      "num_workers": 4,
+      "num_workers": 5,
       "datasets": [
         {
           "type": "LJspeechDataset",
           "args": {
             "part": "train",
-            "max_audio_length": 5.0,
+            "max_audio_length": 20.0,
             "max_text_length": 200
           }
         }
@@ -53,13 +53,13 @@
       ]
     },
     "test": {
-      "batch_size": 32,
-      "num_workers": 4,
+      "batch_size": 64,
+      "num_workers": 5,
       "datasets": [
         {
-          "type": "LibrispeechDataset",
+          "type": "LJspeechDataset",
           "args": {
-            "part": "test-clean",
+            "part": "test",
             "max_audio_length": 20.0,
             "max_text_length": 200
           }
@@ -71,7 +71,7 @@
     "type": "Adam",
     "args": {
       "lr": 0.005,
-      "weight_decay": 1e-7
+      "weight_decay": 0
     }
   },
   "loss": {

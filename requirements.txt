@@ -5,6 +5,7 @@ llvmlite
 editdistance
 matplotlib
 numpy
+wget
 kenlm
 pandas
 Pillow

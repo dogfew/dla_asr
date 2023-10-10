@@ -27,6 +27,8 @@ class ConvBlock(nn.Module):
                     num_features=out_channels
                 ),
                 nn.Hardtanh(
+                    min_val=0,
+                    max_val=20,
                     inplace=True
                 ),
             ]
@@ -59,7 +61,6 @@ class RNNBlock(nn.Module):
                           hidden_size,
                           bidirectional=bidirectional,
                           batch_first=True,
-                          dropout=0.1
                           )
         self.use_batch_norm = batch_norm
 
@@ -74,11 +75,10 @@ class RNNBlock(nn.Module):
             #   B x T x (C * F)
             #   (T * B) x (C * F)
             B, T, F = x.shape
-            x = self.batch_norm(x.view(T * B, F, -1)).view(B, T, F)
+            x = self.batch_norm(x.view(B, F, T)).view(B, T, F)
             # -> B x T x (C * F)
-
         x = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
-        x, h = self.rnn(x, h)
+        x, h = self.rnn(x, None)
         x, _ = pad_packed_sequence(x, batch_first=True)
         if self.rnn.bidirectional:
             x = x[:, :, :self.rnn.hidden_size] + x[:, :, self.rnn.hidden_size:]
@@ -90,8 +90,8 @@ class DeepSpeech2(BaseModel):
     def __init__(self,
                  n_feats: int,
                  n_class: int,
-                 n_conv_layers: int = 3,
-                 n_rnn_layers: int = 7,
+                 n_conv_layers: int = 2,
+                 n_rnn_layers: int = 3,
                  fc_hidden: int = 512,
                  **batch):
         assert n_feats > 0
@@ -107,20 +107,15 @@ class DeepSpeech2(BaseModel):
         rnn_input_size = (96 if n_conv_layers == 3 else 32) * n_feats // 2 ** n_conv_layers
         raw_rnn_layers = [
             RNNBlock(input_size=rnn_input_size, hidden_size=fc_hidden, bidirectional=True, batch_norm=False)
-        ]
-        raw_rnn_layers.extend([
+        ] + [
             RNNBlock(input_size=fc_hidden, hidden_size=fc_hidden, bidirectional=True, batch_norm=True)
             for _ in range(n_rnn_layers - 1)
-        ])
+        ]
 
         self.conv_layers = nn.ModuleList(raw_conv_layers[:n_conv_layers])
         self.rnn_layers = nn.ModuleList(raw_rnn_layers[:n_rnn_layers])
         self.batch_norm = nn.BatchNorm1d(fc_hidden)
-        self.linear = nn.Linear(
-            in_features=fc_hidden,
-            out_features=n_class,
-            bias=False
-        )
+        self.linear = nn.Linear(fc_hidden, n_class, bias=False)
 
     def forward(self, spectrogram, **batch):
         """
@@ -142,7 +137,7 @@ class DeepSpeech2(BaseModel):
         for layer in self.rnn_layers:
             out, lengths, h = layer(out, lengths, h)
         B, T, F = out.shape
-        out = self.batch_norm(out.view(T * B, F, 1)).view(B, T, F)
+        out = self.batch_norm(out.view(B, F, T)).view(B, T, F)
         out = self.linear(out)
         return {"logits": out}
 
@@ -166,11 +161,10 @@ if __name__ == '__main__':
         return spectrogram_batch, lengths
 
 
-    model = DeepSpeech2(n_feats=128, n_class=4, fc_hidden=4)
+    model = DeepSpeech2(n_feats=128, n_class=4, fc_hidden=55)
     spectrogram, lengths = custom_data()
-    conv_block = ConvBlock()
-    print(spectrogram.unsqueeze(dim=1).shape)
-    out = model(spectrogram, **{'spectrogram_length': lengths})['logits'][0]
-    print(out.norm())
-
+    out = model(spectrogram, **{'spectrogram_length': lengths})['logits']
+    print("Grad Norm:", out.norm().item())
+    print("Out shape", out.shape)
+    print(out.sum())
     print("OK")

@@ -18,7 +18,7 @@ from hw_asr.utils import inf_loop, MetricTracker
 from torch.cuda.amp import autocast, GradScaler
 from hw_asr.utils import optional_autocast
 
-mixed_precision = False
+mixed_precision = True
 
 
 class Trainer(BaseTrainer):

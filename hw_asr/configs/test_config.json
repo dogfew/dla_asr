@@ -1,0 +1,126 @@
+{
+  "name": "DeepSpeech2LJSpeech",
+  "n_gpu": 1,
+  "preprocessing": {
+    "sr": 16000,
+    "spectrogram": {
+      "type": "MelSpectrogram",
+      "args": {
+      }
+    },
+    "log_spec": true
+  },
+  "augmentations": {
+    "wave": [],
+    "spectrogram": []
+  },
+  "arch": {
+    "type": "DeepSpeech2",
+    "args": {
+      "n_feats": 128,
+      "fc_hidden": 512,
+      "n_conv_layers": 2,
+      "n_rnn_layers": 3
+    }
+  },
+  "data": {
+    "train": {
+      "batch_size": 64,
+      "num_workers": 5,
+      "datasets": [
+        {
+          "type": "LJspeechDataset",
+          "args": {
+            "part": "train",
+            "max_audio_length": 20.0,
+            "max_text_length": 200
+          }
+        }
+      ]
+    },
+    "val": {
+      "batch_size": 64,
+      "num_workers": 5,
+      "datasets": [
+        {
+          "type": "LibrispeechDataset",
+          "args": {
+            "part": "dev-clean",
+            "max_audio_length": 20.0,
+            "max_text_length": 200
+          }
+        }
+      ]
+    },
+    "test": {
+      "batch_size": 64,
+      "num_workers": 5,
+      "datasets": [
+        {
+          "type": "LJspeechDataset",
+          "args": {
+            "part": "test",
+            "max_audio_length": 20.0,
+            "max_text_length": 200
+          }
+        }
+      ]
+    }
+  },
+  "optimizer": {
+    "type": "Adam",
+    "args": {
+      "lr": 0.005,
+      "weight_decay": 0
+    }
+  },
+  "loss": {
+    "type": "CTCLoss",
+    "args": {}
+  },
+  "metrics": [
+    {
+      "type": "ArgmaxWERMetric",
+      "args": {
+        "name": "WER (argmax)"
+      }
+    },
+    {
+      "type": "ArgmaxCERMetric",
+      "args": {
+        "name": "CER (argmax)"
+      }
+    }
+  ],
+  "lr_scheduler": {
+    "type": "OneCycleLR",
+    "args": {
+      "steps_per_epoch": 100,
+      "epochs": 26,
+      "anneal_strategy": "cos",
+      "max_lr": 1e-3,
+      "pct_start": 0.2
+    }
+  },
+  "text_encoder": {
+    "type": "CTCCharTextEncoder",
+    "args": {
+      "vocab_path": "librispeech"
+    }
+  },
+  "trainer": {
+    "epochs": 25,
+    "save_dir": "saved/",
+    "save_period": 5,
+    "verbosity": 2,
+    "monitor": "min val_loss",
+    "early_stop": 100,
+    "visualize": "wandb",
+    "wandb_project": "asr_project",
+    "len_epoch": 100,
+    "grad_norm_clip": 10,
+    "log_step": 100,
+    "log_predictions_step_epoch": 10,
+    "do_beam_search": true
+  }
+}
