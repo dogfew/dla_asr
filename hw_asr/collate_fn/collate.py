@@ -22,7 +22,7 @@ def collate_fn(dataset_items: list[dict]) -> dict:
                 )
                 result_batch[key] = pad_sequence(
                     sequences=[
-                        torch.squeeze(item.get(key)).t()
+                        torch.squeeze(item.get(key), dim=0).t()
                         for item in dataset_items
                     ],
                     batch_first=True
