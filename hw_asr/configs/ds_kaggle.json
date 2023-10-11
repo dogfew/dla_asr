@@ -1,5 +1,5 @@
 {
-  "name": "DeepSpeech2LJSpeech",
+  "name": "DeepSpeech2",
   "n_gpu": 1,
   "preprocessing": {
     "sr": 16000,
@@ -11,22 +11,50 @@
     "log_spec": true
   },
   "augmentations": {
-    "wave": [],
-    "spectrogram": []
+    "wave": [
+      {
+        "type": "Gain",
+        "args": {
+          "p": 0.1
+        }
+      },
+      {
+        "type": "ColoredNoise",
+        "args": {
+          "p": 0.1,
+          "sample_rate": 32
+        }
+      }
+    ],
+      "spectrogram": [
+        {
+          "type": "FrequencyMasking",
+          "args": {
+            "freq_mask_param": 80
+          }
+        },
+        {
+        "type": "TimeMasking",
+          "args": {
+            "time_mask_param": 40,
+            "p": 0.1
+          }
+        }
+      ]
   },
   "arch": {
     "type": "DeepSpeech2",
     "args": {
       "n_feats": 128,
       "fc_hidden": 512,
-      "n_conv_layers": 2,
+      "n_conv_layers": 3,
       "n_rnn_layers": 5
     }
   },
   "data": {
         "train": {
-          "batch_size": 50,
-          "num_workers": 5,
+          "batch_size": 64,
+          "num_workers": 8,
           "datasets": [
             {
               "type": "CustomDirAudioDataset",
@@ -38,15 +66,24 @@
               }
         },
             {
-                "type": "CustomDirAudioDataset",
+              "type": "CustomDirAudioDataset",
               "args": {
                 "audio_dir": "/kaggle/input/librispeech-asr-wav-dataset/train-clean-360",
                   "transcription_dir":"/kaggle/input/librispeech-asr-wav-dataset/meta/train-clean-360",
                 "max_audio_length": 20.0,
                 "max_text_length": 200
               }
+            },
+            {
+              "type": "CustomDirAudioDataset",
+              "args": {
+                "audio_dir": "/kaggle/input/librispeech-asr-wav-dataset/train-other-500",
+                  "transcription_dir":"/kaggle/input/librispeech-asr-wav-dataset/meta/train-other-500",
+                "max_audio_length": 20.0,
+                "max_text_length": 200
+              }
             }
-      ]
+          ]
     },
     "val": {
       "batch_size": 50,
@@ -70,6 +107,14 @@
           "type": "LibrispeechDataset",
           "args": {
             "part": "test-clean",
+            "max_audio_length": 20.0,
+            "max_text_length": 200
+          }
+        },
+        {
+          "type": "LibrispeechDataset",
+          "args": {
+            "part": "test-other",
             "max_audio_length": 20.0,
             "max_text_length": 200
           }

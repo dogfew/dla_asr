@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import pandas as pd
 from pathlib import Path
 
 import torch
@@ -45,12 +46,13 @@ def main(config, out_file):
 
     results = []
 
-
     metrics_to_print = {
-        'WER': [],
-        'CER': [],
-        'WER (argmax)': [],
-        'CER (argmax)': []
+        ('WER', "BS+LM"): [],
+        ('CER', 'BS+LM'): [],
+        ("WER", "BS"): [],
+        ("CER", "BS"): [],
+        ("WER", "ARGMAX"): [],
+        ("CER", "ARGMAX"): []
     }
     with torch.no_grad():
         for test_type in ['test', 'test-clean', 'test-other']:
@@ -76,24 +78,34 @@ def main(config, out_file):
                     true_text = batch["text"][i].strip().lower()
                     argmax_result = text_encoder.ctc_decode(argmax)
                     beam_search_result = text_encoder.ctc_beam_search(
-                                batch["probs"][i],
-                                batch["log_probs_length"][i], beam_size=150
-                            )
+                        batch["probs"][i],
+                        batch["log_probs_length"][i], beam_size=10
+                    )
+                    lm_beam_search_result = text_encoder.lm_ctc_beam_search(
+                        batch["probs"][i],
+                        batch["log_probs_length"][i], beam_size=150
+                    )
                     results.append(
                         {
                             "ground_truth": batch["text"][i],
                             "pred_text_argmax": argmax_result,
-                            "pred_text_beam_search": beam_search_result,
+                            "pred_text_lm_beam_search": lm_beam_search_result,
+                            "pred_text_beam_search": beam_search_result
                         }
                     )
-                    metrics_to_print['WER'].append(calc_wer(true_text, beam_search_result[0].text))
-                    metrics_to_print['CER'].append(calc_cer(true_text, beam_search_result[0].text))
+                    metrics_to_print[('WER', "BS+LM")].append(calc_wer(true_text, lm_beam_search_result[0].text))
+                    metrics_to_print[('CER', 'BS+LM')].append(calc_cer(true_text, lm_beam_search_result[0].text))
 
-                    metrics_to_print['WER (argmax)'].append(calc_wer(true_text, argmax_result))
-                    metrics_to_print['CER (argmax)'].append(calc_cer(true_text, argmax_result))
-            print(f"TEST: {test_type}")
+                    metrics_to_print[("WER", "BS")].append(calc_wer(true_text, beam_search_result[0].text))
+                    metrics_to_print[("CER", "BS")].append(calc_cer(true_text, beam_search_result[0].text))
+
+                    metrics_to_print[("WER", "ARGMAX")].append(calc_wer(true_text, argmax_result))
+                    metrics_to_print[("CER", "ARGMAX")].append(calc_cer(true_text, argmax_result))
+            print(f"\nDataset: {test_type}")
+            df = pd.DataFrame(columns=['WER', "CER"], index=["BS+LM", "BS", "ARGMAX"])
             for k, v in metrics_to_print.items():
-                print(k, sum(v) / len(v))
+                df[k[0]][k[1]] = sum(v) / len(v) * 100
+            print(df)
     with Path(out_file).open("w") as f:
         json.dump(results, f, indent=2)
 

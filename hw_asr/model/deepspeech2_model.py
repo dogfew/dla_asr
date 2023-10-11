@@ -148,7 +148,6 @@ class DeepSpeech2(BaseModel):
 if __name__ == '__main__':
     torch.manual_seed(0)
 
-
     def custom_data(B=10, F=128, T_max=629):
         spectrogram_batch = torch.zeros(B, F, T_max)
         lengths = torch.zeros(B, dtype=torch.int64)

@@ -68,7 +68,8 @@ def main(config):
         len_epoch=config["trainer"].get("len_epoch", None),
         log_step=config['trainer'].get("log_step", 200),
         log_predictions_step_epoch=config['trainer'].get('log_predictions_step_epoch', 1),
-        do_beam_search=config['trainer'].get('do_beam_search', False)
+        do_beam_search=config['trainer'].get('do_beam_search', False),
+        mixed_precision=config['trainer'].get('mixed_precision', True)
     )
 
     trainer.train()

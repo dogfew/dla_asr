@@ -6,6 +6,7 @@ import PIL
 import pandas as pd
 import torch
 import torch.nn.functional as F
+import wandb
 from torch.nn.utils import clip_grad_norm_
 from torchvision.transforms import ToTensor
 from tqdm import tqdm
@@ -15,10 +16,8 @@ from hw_asr.base.base_text_encoder import BaseTextEncoder
 from hw_asr.logger.utils import plot_spectrogram_to_buf
 from hw_asr.metric.utils import calc_cer, calc_wer
 from hw_asr.utils import inf_loop, MetricTracker
-from torch.cuda.amp import autocast, GradScaler
+from torch.cuda.amp import GradScaler
 from hw_asr.utils import optional_autocast
-
-mixed_precision = True
 
 
 class Trainer(BaseTrainer):
@@ -38,6 +37,7 @@ class Trainer(BaseTrainer):
             text_encoder,
             log_step=200,  # how often WANDB will log
             log_predictions_step_epoch=5,
+            mixed_precision=True,
             do_beam_search=False,
             lr_scheduler=None,
             len_epoch=None,
@@ -60,6 +60,7 @@ class Trainer(BaseTrainer):
         self.log_step = log_step
         self.log_predictions_step_epoch = log_predictions_step_epoch
         self.do_beam_search = do_beam_search
+        self.mixed_precision = mixed_precision
         self.train_metrics = MetricTracker(
             "loss", "grad norm",
             *[m.name for m in self.metrics],
@@ -71,7 +72,7 @@ class Trainer(BaseTrainer):
             writer=self.writer
         )
 
-        self.scaler = GradScaler(enabled=mixed_precision)
+        self.scaler = GradScaler(enabled=self.mixed_precision)
 
     @staticmethod
     def move_batch_to_device(batch, device: torch.device):
@@ -84,6 +85,7 @@ class Trainer(BaseTrainer):
 
     def _clip_grad_norm(self):
         if self.config["trainer"].get("grad_norm_clip", None) is not None:
+            self.scaler.unscale_(self.optimizer)
             clip_grad_norm_(
                 self.model.parameters(), self.config["trainer"]["grad_norm_clip"]
             )
@@ -152,7 +154,7 @@ class Trainer(BaseTrainer):
         batch = self.move_batch_to_device(batch, self.device)
         if is_train:
             self.optimizer.zero_grad()
-        with optional_autocast(mixed_precision):
+        with optional_autocast(self.mixed_precision):
             outputs = self.model(**batch)
             if type(outputs) is dict:
                 batch.update(outputs)
@@ -223,6 +225,7 @@ class Trainer(BaseTrainer):
             log_probs,
             log_probs_length,
             audio_path,
+            audio,
             examples_to_log=10,
             *args,
             **kwargs,
@@ -237,44 +240,55 @@ class Trainer(BaseTrainer):
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
         if self.do_beam_search:
-            log_probs_cpu = log_probs.cpu().detach().numpy()
-            log_probs_length_numpy = log_probs_length.numpy()
-            beam_search_texts = [
+            probs_cpu = torch.exp(log_probs).cpu().detach().numpy()
+            probs_length_numpy = log_probs_length.numpy()
+            lm_beam_search_texts = [
                 self.text_encoder.lm_ctc_beam_search(
-                    probs=log_probs_cpu[i],
-                    probs_length=log_probs_length_numpy[i]
+                    probs=probs_cpu[i],
+                    probs_length=probs_length_numpy[i]
+                )[0].text
+                for i in range(examples_to_log)
+            ]
+            beam_search_texts = [
+                self.text_encoder.ctc_beam_search(
+                    probs=probs_cpu[i],
+                    probs_length=probs_length_numpy[i]
                 )[0].text
                 for i in range(examples_to_log)
             ]
         else:
+            lm_beam_search_texts = ['' for _ in range(examples_to_log)]
             beam_search_texts = ['' for _ in range(examples_to_log)]
-        tuples = [argmax_texts, text, beam_search_texts, argmax_texts_raw, audio_path]
+        tuples = [argmax_texts, text, lm_beam_search_texts, beam_search_texts, argmax_texts_raw, audio_path, audio]
         tuples = [i[:examples_to_log] for i in tuples]
         tuples = list(zip(*tuples))
         shuffle(tuples)
         rows = {}
-        for pred, target, beam_search_pred, raw_pred, audio_path in tuples:
+        for pred, target, lm_beam_search_pred, beam_search_pred, raw_pred, audio_path, audio_ in tuples:
             target = BaseTextEncoder.normalize_text(target)
             wer = calc_wer(target, pred) * 100
             cer = calc_cer(target, pred) * 100
 
             rows[Path(audio_path).name] = {
+                "audio": wandb.Audio(audio_path),
+                "augmented_audio": wandb.Audio(audio_.squeeze(),
+                                               sample_rate=self.config['preprocessing']['sr']),
                 "target": target,
                 "raw prediction": raw_pred,
                 "predictions": pred,
-                "wer": wer,
-                "cer": cer,
             }
             if self.do_beam_search:
-                wer_beam_search = calc_wer(target, beam_search_pred) * 100
-                cer_beam_search = calc_cer(target, beam_search_pred) * 100
+                wer_beam_search = calc_wer(target, lm_beam_search_pred) * 100
+                cer_beam_search = calc_cer(target, lm_beam_search_pred) * 100
 
                 rows[Path(audio_path).name].update(
-                    {'wer_beam_search': wer_beam_search,
-                     'cer_beam_search': cer_beam_search,
-                     'predictions_beam_search': beam_search_pred
+                    {'predictions_lm_beam_search': lm_beam_search_pred,
+                     'predictions_beam_search': beam_search_pred,
+                     'wer_lm_beam_search': wer_beam_search,
+                     'cer_lm_beam_search': cer_beam_search,
                      }
                 )
+            rows[Path(audio_path).name].update({"wer": wer, "cer": cer})
         self.writer.add_table("predictions", pd.DataFrame.from_dict(rows, orient="index"))
 
     def _log_spectrogram(self, spectrogram_batch):
@@ -290,7 +304,12 @@ class Trainer(BaseTrainer):
         parameters = [p for p in parameters if p.grad is not None]
         total_norm = torch.norm(
             torch.stack(
-                [torch.norm(p.grad.detach(), norm_type).cpu() for p in parameters]
+                [torch.norm(
+                    # nan occurs in first batch in first run with grad scaler
+                    torch.nan_to_num(p.grad, nan=0).detach(),
+                    norm_type).cpu()
+                 for p in parameters
+                 ]
             ),
             norm_type,
         )
