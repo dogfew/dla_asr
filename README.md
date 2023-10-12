@@ -6,7 +6,7 @@ Make shore that your python version >= 3.10
 
 Run commands in `evaluate_script.sh`
 ```shell 
-bash evaluage_script.sh
+bash evaluate_script.sh
 ```
 The commands are: 
 ```shell
