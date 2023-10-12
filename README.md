@@ -2,11 +2,32 @@
 
 ## Installation guide
 
-< Write your installation guide here >
+Make shore that your python version >= 3.10
 
+Run commands in `evaluage_script.sh`: 
 ```shell
-pip install -r ./requirements.txt
+pip install -r requirements.txt  # install requirements
+pip install gdown  # install one more thing for downloading my checkpoint and config
+mkdir -p default_test_model
+cd default_test_model
+gdown --id 1Pjhw3YC991OPCTdSIcAsO3seHqhvkXR_ -O checkpoint.pth
+gdown --id 1JrK51xkfYZzWZJf9INFyqTIVDQmiiChJ -O config.json
+cd ..
 ```
+Run 
+```shell
+python test.py -r default_test_model/checkpoint.pth
+```
+
+Best Scores (BS+LM): 
+
+```angular2html
+                WER        CER
+test-clean    9.259568   3.39623
+test-other    16.818835  7.445999
+```
+
+**Quality Score: 9/10**
 
 ## Recommended implementation order
 

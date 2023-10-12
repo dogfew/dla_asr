@@ -111,3 +111,4 @@ data/
 .vscode/
 .idea/
 __MACOSX/
+/default_test_model/

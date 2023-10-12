@@ -160,7 +160,7 @@ if __name__ == "__main__":
     args.add_argument(
         "-b",
         "--batch-size",
-        default=20,
+        default=5,
         type=int,
         help="Test dataset batch size",
     )
