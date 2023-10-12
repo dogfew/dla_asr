@@ -8,14 +8,17 @@ Run commands in `evaluate_script.sh`
 ```shell 
 bash evaluate_script.sh
 ```
-The commands are: 
+The commands in file `evaluate_script.sh` are: 
 ```shell
-pip install -r requirements.txt  # install requirements
-pip install gdown  # install one more thing for downloading my checkpoint and config
+# install requirements
+pip install -r requirements.txt
+# create directory
+pip install gdown
 mkdir -p default_test_model
 cd default_test_model
 gdown --id 1Pjhw3YC991OPCTdSIcAsO3seHqhvkXR_ -O checkpoint.pth
 gdown --id 1JrK51xkfYZzWZJf9INFyqTIVDQmiiChJ -O config.json
+gdown --id 13UDHWNckiFJtKFHucmM7gewddikWSFh1 -O test_config.json
 cd ..
 ```
 To get scores run: 
@@ -44,6 +47,8 @@ python train.py -c hw_asr/configs/one_batch_test_aug.json
 ```
 
 **Optional Tasks: 0.5**: External LM for evaluation. 
+
+**Expected Grade**: 9.5/11
 ## Recommended implementation order
 
 You might be a little intimidated by the number of folders and classes. Try to follow this steps to gradually undestand
