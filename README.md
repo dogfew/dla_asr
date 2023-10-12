@@ -4,7 +4,11 @@
 
 Make shore that your python version >= 3.10
 
-Run commands in `evaluage_script.sh`: 
+Run commands in `evaluate_script.sh`
+```shell 
+bash evaluage_script.sh
+```
+The commands are: 
 ```shell
 pip install -r requirements.txt  # install requirements
 pip install gdown  # install one more thing for downloading my checkpoint and config
@@ -14,7 +18,7 @@ gdown --id 1Pjhw3YC991OPCTdSIcAsO3seHqhvkXR_ -O checkpoint.pth
 gdown --id 1JrK51xkfYZzWZJf9INFyqTIVDQmiiChJ -O config.json
 cd ..
 ```
-Run 
+To get scores run: 
 ```shell
 python test.py -r default_test_model/checkpoint.pth
 ```
@@ -29,6 +33,10 @@ test-other    16.818835  7.445999
 
 **Quality Score: 9/10**
 
+To reproduce, train with this config (150 epochs): 
+```shell
+python train.py -c hw_asr/configs/ds_all.json
+```
 ## Recommended implementation order
 
 You might be a little intimidated by the number of folders and classes. Try to follow this steps to gradually undestand
