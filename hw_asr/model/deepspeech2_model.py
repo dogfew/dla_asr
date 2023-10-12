@@ -71,17 +71,13 @@ class RNNBlock(nn.Module):
         :returns : B x T x (C * F)
         """
         if self.use_batch_norm:
-            #   B x T x (C * F)
-            #   (T * B) x (C * F)
             B, T, F = x.shape
             x = self.batch_norm(x.view(B, F, T)).view(B, T, F)
-            # -> B x T x (C * F)
         x = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
         x, h = self.rnn(x, None)
         x, _ = pad_packed_sequence(x, batch_first=True)
         if self.rnn.bidirectional:
             x = x[:, :, : self.rnn.hidden_size] + x[:, :, self.rnn.hidden_size :]
-        # -> B x T x (C * F)
         return x, lengths, h
 
 
@@ -137,15 +133,9 @@ class DeepSpeech2(BaseModel):
         :param spectrogram: B x F x T
         """
         lengths = batch["spectrogram_length"]
-        # spectrogram: (B, F, T)
         out = spectrogram.unsqueeze(dim=1)
         for layer in self.conv_layers:
-            # conv: B x 1 x F x T
-            #    -> B x C x NF x T1
             out, lengths = layer(out, lengths)
-        # new_spec: B x (C * NF) x T1
-        #    ->     B x T1 x (C * NF)
-        #    ->     B x T1 x F2
         B, T, F, _ = out.shape
         out = out.view(B, T * F, -1).transpose(1, 2).contiguous()
         h = None

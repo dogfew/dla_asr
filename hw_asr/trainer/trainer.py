@@ -43,7 +43,7 @@ class Trainer(BaseTrainer):
         len_epoch=None,
         skip_oom=True,
     ):
-        super().__init__(model, criterion, metrics, optimizer, config, device)
+        super().__init__(model, criterion, metrics, optimizer, config, device, lr_scheduler)
         self.skip_oom = skip_oom
         self.text_encoder = text_encoder
         self.config = config
