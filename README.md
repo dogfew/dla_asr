@@ -20,7 +20,7 @@ cd ..
 ```
 To get scores run: 
 ```shell
-python test.py -r default_test_model/checkpoint.pth
+python test.py -r default_test_model/checkpoint.pth -c default_test_model/test_config.json
 ```
 
 Best Scores (BS+LM): 
@@ -37,6 +37,13 @@ To reproduce, train with this config (150 epochs):
 ```shell
 python train.py -c hw_asr/configs/ds_all.json
 ```
+
+To check that you __can__ run train: 
+```shell
+python train.py -c hw_asr/configs/one_batch_test_aug.json
+```
+
+**Optional Tasks: 0.5**: External LM for evaluation. 
 ## Recommended implementation order
 
 You might be a little intimidated by the number of folders and classes. Try to follow this steps to gradually undestand

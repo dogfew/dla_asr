@@ -210,9 +210,12 @@ if __name__ == "__main__":
                 ],
             }
         }
-
-    assert config.config.get("data", {}).get("test", None) is not None
-    config["data"]["test"]["batch_size"] = args.batch_size
-    config["data"]["test"]["n_jobs"] = args.jobs
-
+    if config.config.get("data", {}).get("test", None) is not None:
+        arg = 'test'
+    elif config.config.get("data", {}).get("test-clean", None) is not None:
+        arg = 'test-clean'
+    else:
+        raise AssertionError("Should provide test!")
+    config["data"][arg]["batch_size"] = args.batch_size
+    config["data"][arg]["n_jobs"] = args.jobs
     main(config, args.output)
