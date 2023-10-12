@@ -13,7 +13,9 @@ class ArgmaxWERMetric(BaseMetric):
         super().__init__(*args, **kwargs)
         self.text_encoder = text_encoder
 
-    def __call__(self, log_probs: Tensor, log_probs_length: Tensor, text: List[str], **kwargs):
+    def __call__(
+        self, log_probs: Tensor, log_probs_length: Tensor, text: List[str], **kwargs
+    ):
         wers = []
         predictions = torch.argmax(log_probs.cpu(), dim=-1).numpy()
         lengths = log_probs_length.detach().numpy()
@@ -32,18 +34,20 @@ class BeamSearchWERMetric(BaseMetric):
         super().__init__(*args, **kwargs)
         self.text_encoder = text_encoder
 
-    def __call__(self,
-                 log_probs: Tensor,
-                 log_probs_length: Tensor,
-                 text: list[str],
-                 **kwargs):
-        if not hasattr(self.text_encoder, 'decoder'):
+    def __call__(
+        self, log_probs: Tensor, log_probs_length: Tensor, text: list[str], **kwargs
+    ):
+        if not hasattr(self.text_encoder, "decoder"):
             return 1
         wers = []
         log_probs_cpu = log_probs.cpu().detach().numpy()
         log_probs_length_numpy = log_probs_length.numpy()
-        for log_prob_vec, length, target_text in zip(log_probs_cpu, log_probs_length_numpy, text):
+        for log_prob_vec, length, target_text in zip(
+            log_probs_cpu, log_probs_length_numpy, text
+        ):
             target_text = BaseTextEncoder.normalize_text(target_text)
-            pred_text = self.text_encoder.lm_ctc_beam_search(log_prob_vec, length)[0].text
+            pred_text = self.text_encoder.lm_ctc_beam_search(log_prob_vec, length)[
+                0
+            ].text
             wers.append(calc_wer(target_text, pred_text))
         return sum(wers) / len(wers)

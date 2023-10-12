@@ -12,14 +12,14 @@ class WanDBWriter:
 
         try:
             import wandb
+
             wandb.login()
 
-            if config['trainer'].get('wandb_project') is None:
+            if config["trainer"].get("wandb_project") is None:
                 raise ValueError("please specify project name for wandb")
 
             wandb.init(
-                project=config['trainer'].get('wandb_project'),
-                config=config.config
+                project=config["trainer"].get("wandb_project"), config=config.config
             )
             self.wandb = wandb
 
@@ -44,31 +44,44 @@ class WanDBWriter:
         return f"{scalar_name}_{self.mode}"
 
     def add_scalar(self, scalar_name, scalar):
-        self.wandb.log({
-            self._scalar_name(scalar_name): scalar,
-        }, step=self.step)
+        self.wandb.log(
+            {
+                self._scalar_name(scalar_name): scalar,
+            },
+            step=self.step,
+        )
 
     def add_scalars(self, tag, scalars):
-        self.wandb.log({
-            **{f"{scalar_name}_{tag}_{self.mode}": scalar for scalar_name, scalar in
-               scalars.items()}
-        }, step=self.step)
+        self.wandb.log(
+            {
+                **{
+                    f"{scalar_name}_{tag}_{self.mode}": scalar
+                    for scalar_name, scalar in scalars.items()
+                }
+            },
+            step=self.step,
+        )
 
     def add_image(self, scalar_name, image):
-        self.wandb.log({
-            self._scalar_name(scalar_name): self.wandb.Image(image)
-        }, step=self.step)
+        self.wandb.log(
+            {self._scalar_name(scalar_name): self.wandb.Image(image)}, step=self.step
+        )
 
     def add_audio(self, scalar_name, audio, sample_rate=None):
         audio = audio.detach().cpu().numpy().T
-        self.wandb.log({
-            self._scalar_name(scalar_name): self.wandb.Audio(audio, sample_rate=sample_rate)
-        }, step=self.step)
+        self.wandb.log(
+            {
+                self._scalar_name(scalar_name): self.wandb.Audio(
+                    audio, sample_rate=sample_rate
+                )
+            },
+            step=self.step,
+        )
 
     def add_text(self, scalar_name, text):
-        self.wandb.log({
-            self._scalar_name(scalar_name): self.wandb.Html(text)
-        }, step=self.step)
+        self.wandb.log(
+            {self._scalar_name(scalar_name): self.wandb.Html(text)}, step=self.step
+        )
 
     def add_histogram(self, scalar_name, hist, bins=None):
         hist = hist.detach().cpu().numpy()
@@ -76,17 +89,15 @@ class WanDBWriter:
         if np_hist[0].shape[0] > 512:
             np_hist = np.histogram(hist, bins=512)
 
-        hist = self.wandb.Histogram(
-            np_histogram=np_hist
-        )
+        hist = self.wandb.Histogram(np_histogram=np_hist)
 
-        self.wandb.log({
-            self._scalar_name(scalar_name): hist
-        }, step=self.step)
+        self.wandb.log({self._scalar_name(scalar_name): hist}, step=self.step)
 
     def add_table(self, table_name, table: pd.DataFrame):
-        self.wandb.log({self._scalar_name(table_name): wandb.Table(dataframe=table)},
-                       step=self.step)
+        self.wandb.log(
+            {self._scalar_name(table_name): wandb.Table(dataframe=table)},
+            step=self.step,
+        )
 
     def add_images(self, scalar_name, images):
         raise NotImplementedError()

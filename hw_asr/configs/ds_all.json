@@ -24,6 +24,13 @@
           "p": 0.1,
           "sample_rate": 32
         }
+      },
+      {
+      "type": "PitchShift",
+      "args": {
+        "p": 0.1,
+        "sample_rate": 8000
+      }
       }
     ],
       "spectrogram": [
@@ -128,7 +135,7 @@
   "optimizer": {
     "type": "Adam",
     "args": {
-      "lr": 0.00025,
+      "lr": 0.0002,
       "weight_decay": 0
     }
   },
@@ -154,9 +161,9 @@
     "type": "OneCycleLR",
     "args": {
       "steps_per_epoch": 200,
-      "epochs": 101,
+      "epochs": 121,
       "anneal_strategy": "cos",
-      "max_lr": 0.0005,
+      "max_lr": 0.00045,
       "pct_start": 0.2
     }
   },
@@ -167,7 +174,7 @@
     }
   },
   "trainer": {
-    "epochs": 100,
+    "epochs": 120,
     "save_dir": "saved/",
     "save_period": 5,
     "verbosity": 2,
@@ -175,7 +182,7 @@
     "early_stop": 100,
     "visualize": "wandb",
     "wandb_project": "asr_project",
-    "len_epoch": 100,
+    "len_epoch": 200,
     "grad_norm_clip": 10,
     "log_step": 100,
     "log_predictions_step_epoch": 10,

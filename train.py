@@ -53,7 +53,9 @@ def main(config):
     # disabling scheduler
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = config.init_obj(config["optimizer"], torch.optim, trainable_params)
-    lr_scheduler = config.init_obj(config["lr_scheduler"], torch.optim.lr_scheduler, optimizer)
+    lr_scheduler = config.init_obj(
+        config["lr_scheduler"], torch.optim.lr_scheduler, optimizer
+    )
 
     trainer = Trainer(
         model,
@@ -66,10 +68,12 @@ def main(config):
         dataloaders=dataloaders,
         lr_scheduler=lr_scheduler,
         len_epoch=config["trainer"].get("len_epoch", None),
-        log_step=config['trainer'].get("log_step", 200),
-        log_predictions_step_epoch=config['trainer'].get('log_predictions_step_epoch', 1),
-        do_beam_search=config['trainer'].get('do_beam_search', False),
-        mixed_precision=config['trainer'].get('mixed_precision', True)
+        log_step=config["trainer"].get("log_step", 200),
+        log_predictions_step_epoch=config["trainer"].get(
+            "log_predictions_step_epoch", 1
+        ),
+        do_beam_search=config["trainer"].get("do_beam_search", False),
+        mixed_precision=config["trainer"].get("mixed_precision", True),
     )
 
     trainer.train()

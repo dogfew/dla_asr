@@ -16,15 +16,15 @@ logger = logging.getLogger(__name__)
 
 class BaseDataset(Dataset):
     def __init__(
-            self,
-            index,
-            text_encoder: BaseTextEncoder,
-            config_parser: ConfigParser,
-            wave_augs=None,
-            spec_augs=None,
-            limit=None,
-            max_audio_length=None,
-            max_text_length=None,
+        self,
+        index,
+        text_encoder: BaseTextEncoder,
+        config_parser: ConfigParser,
+        wave_augs=None,
+        spec_augs=None,
+        limit=None,
+        max_audio_length=None,
+        max_text_length=None,
     ):
         self.text_encoder = text_encoder
         self.config_parser = config_parser
@@ -33,7 +33,9 @@ class BaseDataset(Dataset):
         self.log_spec = config_parser["preprocessing"]["log_spec"]
 
         self._assert_index_is_valid(index)
-        index = self._filter_records_from_dataset(index, max_audio_length, max_text_length, limit)
+        index = self._filter_records_from_dataset(
+            index, max_audio_length, max_text_length, limit
+        )
         # it's a good idea to sort index by audio length
         # It would be easier to write length-based batch samplers later
         index = self._sort_index(index)
@@ -85,11 +87,13 @@ class BaseDataset(Dataset):
 
     @staticmethod
     def _filter_records_from_dataset(
-            index: list, max_audio_length, max_text_length, limit
+        index: list, max_audio_length, max_text_length, limit
     ) -> list:
         initial_size = len(index)
         if max_audio_length is not None:
-            exceeds_audio_length = np.array([el["audio_len"] for el in index]) >= max_audio_length
+            exceeds_audio_length = (
+                np.array([el["audio_len"] for el in index]) >= max_audio_length
+            )
             _total = exceeds_audio_length.sum()
             logger.info(
                 f"{_total} ({_total / initial_size:.1%}) records are longer then "
@@ -101,10 +105,10 @@ class BaseDataset(Dataset):
         initial_size = len(index)
         if max_text_length is not None:
             exceeds_text_length = (
-                    np.array(
-                        [len(BaseTextEncoder.normalize_text(el["text"])) for el in index]
-                    )
-                    >= max_text_length
+                np.array(
+                    [len(BaseTextEncoder.normalize_text(el["text"])) for el in index]
+                )
+                >= max_text_length
             )
             _total = exceeds_text_length.sum()
             logger.info(

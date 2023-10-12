@@ -10,10 +10,9 @@ from hw_asr.base.base_text_encoder import BaseTextEncoder
 
 
 class CharTextEncoder(BaseTextEncoder):
-
     def __init__(self, alphabet: List[str] = None):
         if alphabet is None:
-            alphabet = list(ascii_lowercase + ' ')
+            alphabet = list(ascii_lowercase + " ")
         self.alphabet = alphabet
         self.ind2char = {k: v for k, v in enumerate(sorted(alphabet))}
         self.char2ind = {v: k for k, v in self.ind2char.items()}
@@ -32,13 +31,14 @@ class CharTextEncoder(BaseTextEncoder):
         except KeyError as e:
             unknown_chars = set([char for char in text if char not in self.char2ind])
             raise Exception(
-                f"Can't encode text '{text}'. Unknown chars: '{' '.join(unknown_chars)}'")
+                f"Can't encode text '{text}'. Unknown chars: '{' '.join(unknown_chars)}'"
+            )
 
     def decode(self, vector: Tensor | np.ndarray | list[int]) -> str:
-        return ''.join([self.ind2char[int(ind)] for ind in vector]).strip()
+        return "".join([self.ind2char[int(ind)] for ind in vector]).strip()
 
     def dump(self, file):
-        with Path(file).open('w') as f:
+        with Path(file).open("w") as f:
             json.dump(self.ind2char, f)
 
     @classmethod

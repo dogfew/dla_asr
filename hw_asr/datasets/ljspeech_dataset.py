@@ -70,15 +70,13 @@ class LJspeechDataset(BaseDataset):
         for dirpath, dirnames, filenames in os.walk(str(split_dir)):
             if any([f.endswith(".wav") for f in filenames]):
                 wav_dirs.add(dirpath)
-        for wav_dir in tqdm(
-                list(wav_dirs), desc=f"Preparing ljspeech folders: {part}"
-        ):
+        for wav_dir in tqdm(list(wav_dirs), desc=f"Preparing ljspeech folders: {part}"):
             wav_dir = Path(wav_dir)
             trans_path = list(self._data_dir.glob("*.csv"))[0]
             with trans_path.open() as f:
                 for line in f:
-                    w_id = line.split('|')[0]
-                    w_text = " ".join(line.split('|')[1:]).strip()
+                    w_id = line.split("|")[0]
+                    w_text = " ".join(line.split("|")[1:]).strip()
                     wav_path = wav_dir / f"{w_id}.wav"
                     if not wav_path.exists():  # elem in another part
                         continue

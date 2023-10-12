@@ -69,8 +69,10 @@ class ConfigParser:
             resume = Path(args.resume)
             cfg_fname = resume.parent / "config.json"
         else:
-            msg_no_cfg = "Configuration file need to be specified. " \
-                         "Add '-c config.json', for example."
+            msg_no_cfg = (
+                "Configuration file need to be specified. "
+                "Add '-c config.json', for example."
+            )
             assert args.config is not None, msg_no_cfg
             resume = None
             cfg_fname = Path(args.config)
@@ -142,8 +144,9 @@ class ConfigParser:
             if "text_encoder" not in self._config:
                 self._text_encoder = CTCCharTextEncoder()
             else:
-                self._text_encoder = self.init_obj(self["text_encoder"],
-                                                   default_module=text_encoder_module)
+                self._text_encoder = self.init_obj(
+                    self["text_encoder"], default_module=text_encoder_module
+                )
         return self._text_encoder
 
     # setting read-only attributes

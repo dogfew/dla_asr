@@ -23,18 +23,18 @@ class Trainer(BaseTrainer):
     """
 
     def __init__(
-            self,
-            model,
-            criterion,
-            metrics,
-            optimizer,
-            config,
-            device,
-            dataloaders,
-            text_encoder,
-            lr_scheduler=None,
-            len_epoch=None,
-            skip_oom=True,
+        self,
+        model,
+        criterion,
+        metrics,
+        optimizer,
+        config,
+        device,
+        dataloaders,
+        text_encoder,
+        lr_scheduler=None,
+        len_epoch=None,
+        skip_oom=True,
     ):
         super().__init__(model, criterion, metrics, optimizer, config, device)
         self.skip_oom = skip_oom
@@ -48,7 +48,9 @@ class Trainer(BaseTrainer):
             # iteration-based training
             self.train_dataloader = inf_loop(self.train_dataloader)
             self.len_epoch = len_epoch
-        self.evaluation_dataloaders = {k: v for k, v in dataloaders.items() if k != "train"}
+        self.evaluation_dataloaders = {
+            k: v for k, v in dataloaders.items() if k != "train"
+        }
         self.lr_scheduler = lr_scheduler
         self.log_step = 50
 
@@ -85,7 +87,7 @@ class Trainer(BaseTrainer):
         self.train_metrics.reset()
         self.writer.add_scalar("epoch", epoch)
         for batch_idx, batch in enumerate(
-                tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
+            tqdm(self.train_dataloader, desc="train", total=self.len_epoch)
         ):
             try:
                 batch = self.process_batch(
@@ -168,9 +170,9 @@ class Trainer(BaseTrainer):
         self.evaluation_metrics.reset()
         with torch.no_grad():
             for batch_idx, batch in tqdm(
-                    enumerate(dataloader),
-                    desc=part,
-                    total=len(dataloader),
+                enumerate(dataloader),
+                desc=part,
+                total=len(dataloader),
             ):
                 batch = self.process_batch(
                     batch,
@@ -198,14 +200,14 @@ class Trainer(BaseTrainer):
         return base.format(current, total, 100.0 * current / total)
 
     def _log_predictions(
-            self,
-            text,
-            log_probs,
-            log_probs_length,
-            audio_path,
-            examples_to_log=10,
-            *args,
-            **kwargs,
+        self,
+        text,
+        log_probs,
+        log_probs_length,
+        audio_path,
+        examples_to_log=10,
+        *args,
+        **kwargs,
     ):
         # TODO: implement logging of beam search results
         if self.writer is None:
@@ -232,7 +234,9 @@ class Trainer(BaseTrainer):
                 "wer": wer,
                 "cer": cer,
             }
-        self.writer.add_table("predictions", pd.DataFrame.from_dict(rows, orient="index"))
+        self.writer.add_table(
+            "predictions", pd.DataFrame.from_dict(rows, orient="index")
+        )
 
     def _log_spectrogram(self, spectrogram_batch):
         spectrogram = random.choice(spectrogram_batch.cpu())

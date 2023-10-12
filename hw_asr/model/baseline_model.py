@@ -13,7 +13,7 @@ class BaselineModel(BaseModel):
             nn.ReLU(),
             nn.Linear(in_features=fc_hidden, out_features=fc_hidden),
             nn.ReLU(),
-            nn.Linear(in_features=fc_hidden, out_features=n_class)
+            nn.Linear(in_features=fc_hidden, out_features=n_class),
         )
 
     def forward(self, spectrogram, **batch):
@@ -21,4 +21,3 @@ class BaselineModel(BaseModel):
 
     def transform_input_lengths(self, input_lengths):
         return input_lengths  # we don't reduce time dimension here
-

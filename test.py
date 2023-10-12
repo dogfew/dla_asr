@@ -47,15 +47,15 @@ def main(config, out_file):
     results = []
 
     metrics_to_print = {
-        ('WER', "BS+LM"): [],
-        ('CER', 'BS+LM'): [],
+        ("WER", "BS+LM"): [],
+        ("CER", "BS+LM"): [],
         ("WER", "BS"): [],
         ("CER", "BS"): [],
         ("WER", "ARGMAX"): [],
-        ("CER", "ARGMAX"): []
+        ("CER", "ARGMAX"): [],
     }
     with torch.no_grad():
-        for test_type in ['test', 'test-clean', 'test-other']:
+        for test_type in ["test", "test-clean", "test-other"]:
             if test_type not in dataloaders.keys():
                 continue
             for batch_num, batch in enumerate(tqdm(dataloaders[test_type])):
@@ -66,9 +66,11 @@ def main(config, out_file):
                 else:
                     batch["logits"] = output
                 batch["log_probs"] = torch.log_softmax(batch["logits"], dim=-1)
-                batch["log_probs_length"] = model.transform_input_lengths(
-                    batch["spectrogram_length"]
-                ).cpu().numpy()
+                batch["log_probs_length"] = (
+                    model.transform_input_lengths(batch["spectrogram_length"])
+                    .cpu()
+                    .numpy()
+                )
                 batch["probs"] = batch["log_probs"].exp().cpu().numpy()
                 batch["argmax"] = batch["probs"].argmax(-1)
                 for i in range(len(batch["text"])):
@@ -78,31 +80,39 @@ def main(config, out_file):
                     true_text = batch["text"][i].strip().lower()
                     argmax_result = text_encoder.ctc_decode(argmax)
                     beam_search_result = text_encoder.ctc_beam_search(
-                        batch["probs"][i],
-                        batch["log_probs_length"][i], beam_size=10
+                        batch["probs"][i], batch["log_probs_length"][i], beam_size=10
                     )
                     lm_beam_search_result = text_encoder.lm_ctc_beam_search(
-                        batch["probs"][i],
-                        batch["log_probs_length"][i], beam_size=150
+                        batch["probs"][i], batch["log_probs_length"][i], beam_size=150
                     )
                     results.append(
                         {
                             "ground_truth": batch["text"][i],
                             "pred_text_argmax": argmax_result,
                             "pred_text_lm_beam_search": lm_beam_search_result,
-                            "pred_text_beam_search": beam_search_result
+                            "pred_text_beam_search": beam_search_result,
                         }
                     )
-                    metrics_to_print[('WER', "BS+LM")].append(calc_wer(true_text, lm_beam_search_result[0].text))
-                    metrics_to_print[('CER', 'BS+LM')].append(calc_cer(true_text, lm_beam_search_result[0].text))
-
-                    metrics_to_print[("WER", "BS")].append(calc_wer(true_text, beam_search_result[0].text))
-                    metrics_to_print[("CER", "BS")].append(calc_cer(true_text, beam_search_result[0].text))
-
-                    metrics_to_print[("WER", "ARGMAX")].append(calc_wer(true_text, argmax_result))
-                    metrics_to_print[("CER", "ARGMAX")].append(calc_cer(true_text, argmax_result))
+                    metrics_to_print[("WER", "BS+LM")].append(
+                        calc_wer(true_text, lm_beam_search_result[0].text)
+                    )
+                    metrics_to_print[("CER", "BS+LM")].append(
+                        calc_cer(true_text, lm_beam_search_result[0].text)
+                    )
+                    metrics_to_print[("WER", "BS")].append(
+                        calc_wer(true_text, beam_search_result[0].text)
+                    )
+                    metrics_to_print[("CER", "BS")].append(
+                        calc_cer(true_text, beam_search_result[0].text)
+                    )
+                    metrics_to_print[("WER", "ARGMAX")].append(
+                        calc_wer(true_text, argmax_result)
+                    )
+                    metrics_to_print[("CER", "ARGMAX")].append(
+                        calc_cer(true_text, argmax_result)
+                    )
             print(f"\nDataset: {test_type}")
-            df = pd.DataFrame(columns=['WER', "CER"], index=["BS+LM", "BS", "ARGMAX"])
+            df = pd.DataFrame(columns=["WER", "CER"], index=["BS+LM", "BS", "ARGMAX"])
             for k, v in metrics_to_print.items():
                 df[k[0]][k[1]] = sum(v) / len(v) * 100
             print(df)

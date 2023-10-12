@@ -5,9 +5,7 @@ from pathlib import Path
 from hw_asr.utils import read_json, ROOT_PATH
 
 
-def setup_logging(
-        save_dir, log_config=None, default_level=logging.INFO
-):
+def setup_logging(save_dir, log_config=None, default_level=logging.INFO):
     """
     Setup logging configuration
     """

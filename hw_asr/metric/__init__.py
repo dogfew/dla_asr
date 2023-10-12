@@ -5,5 +5,5 @@ __all__ = [
     "ArgmaxWERMetric",
     "ArgmaxCERMetric",
     "BeamSearchCERMetric",
-    "BeamSearchWERMetric"
+    "BeamSearchWERMetric",
 ]
