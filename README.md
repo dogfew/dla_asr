@@ -30,11 +30,11 @@ Best Scores (BS+LM):
 
 ```angular2html
                 WER        CER
-test-clean    9.259568   3.39623
+test-clean    23.479359  10.984297
 test-other    16.818835  7.445999
 ```
 
-**Quality Score: 9/10**
+**Quality Score: 8/10**
 
 To reproduce, train with this config (150 epochs): 
 ```shell
@@ -48,7 +48,7 @@ python train.py -c hw_asr/configs/one_batch_test_aug.json
 
 **Optional Tasks: 0.5**: External LM for evaluation. 
 
-**Expected Grade**: 9.5/11
+**Expected Grade**: 8.5/11
 ## Recommended implementation order
 
 You might be a little intimidated by the number of folders and classes. Try to follow this steps to gradually undestand
