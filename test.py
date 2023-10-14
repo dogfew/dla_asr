@@ -17,6 +17,11 @@ from hw_asr.metric.utils import calc_wer, calc_cer
 DEFAULT_CHECKPOINT_PATH = ROOT_PATH / "default_test_model" / "checkpoint.pth"
 
 
+SEED = 123
+torch.manual_seed(SEED)
+torch.backends.cudnn.deterministic = True
+
+
 def main(config, out_file):
     logger = config.get_logger("test")
 
@@ -44,18 +49,17 @@ def main(config, out_file):
     model = model.to(device)
     model.eval()
 
-    results = []
-
-    metrics_to_print = {
-        ("WER", "BS+LM"): [],
-        ("CER", "BS+LM"): [],
-        ("WER", "BS"): [],
-        ("CER", "BS"): [],
-        ("WER", "ARGMAX"): [],
-        ("CER", "ARGMAX"): [],
-    }
     with torch.no_grad():
         for test_type in ["test", "test-clean", "test-other"]:
+            results = []
+            metrics_to_print = {
+                ("WER", "BS+LM"): [],
+                ("CER", "BS+LM"): [],
+                ("WER", "BS"): [],
+                ("CER", "BS"): [],
+                ("WER", "ARGMAX"): [],
+                ("CER", "ARGMAX"): [],
+            }
             if test_type not in dataloaders.keys():
                 continue
             for batch_num, batch in enumerate(tqdm(dataloaders[test_type])):
