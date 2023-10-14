@@ -1,7 +1,7 @@
 # install requirements
 pip install -r requirements.txt
 # create directory
-pip install gdown
+pip install gdown>4.7
 mkdir -p default_test_model
 cd default_test_model
 gdown 1Pjhw3YC991OPCTdSIcAsO3seHqhvkXR_ -O checkpoint.pth
