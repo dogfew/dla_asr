@@ -148,25 +148,3 @@ class DeepSpeech2(BaseModel):
 
     def transform_input_lengths(self, input_lengths):
         return input_lengths // 2
-
-
-if __name__ == "__main__":
-    torch.manual_seed(0)
-
-    def custom_data(B=10, F=128, T_max=629):
-        spectrogram_batch = torch.zeros(B, F, T_max)
-        lengths = torch.zeros(B, dtype=torch.int64)
-        for i in range(B):
-            T_i = torch.randint(20, T_max + 1, (1,)).item()
-            lengths[i] = T_i
-            spectrogram_batch[i, :, :T_i] = torch.rand(F, T_i)
-        spectrogram_batch[0, :, :T_max] = torch.rand(F, T_max)
-        return spectrogram_batch, lengths
-
-    model = DeepSpeech2(n_feats=128, n_class=4, fc_hidden=55)
-    spectrogram, lengths = custom_data()
-    out = model(spectrogram, **{"spectrogram_length": lengths})["logits"]
-    print("Grad Norm:", out.norm().item())
-    print("Out shape", out.shape)
-    print(out.sum())
-    print("OK")
