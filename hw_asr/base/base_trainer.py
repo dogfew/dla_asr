@@ -190,7 +190,7 @@ class BaseTrainer:
             )
         else:
             self.optimizer.load_state_dict(checkpoint["optimizer"])
-        if checkpoint["config"].get("lr_scheduler") != self.config["lr_scheduler"]:
+        if checkpoint["config"]["lr_scheduler"] != self.config["lr_scheduler"]:
             self.logger.warning(
                 "Warning: lr_scheduler given in config file is different "
                 "from that of checkpoint. Scheduler params not being resumed."
